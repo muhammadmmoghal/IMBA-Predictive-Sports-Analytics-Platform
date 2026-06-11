@@ -1,0 +1,27 @@
+# Web scraping
+requests
+beautifulsoup4
+selenium
+lxml
+
+# Data processing
+pandas
+numpy
+
+# Machine learning
+scikit-learn
+joblib
+
+# Visualization
+matplotlib
+seaborn
+
+# Dashboard
+streamlit
+
+# Notebooks
+jupyter
+
+# Utilities
+python-dotenv
+tqdm
