@@ -1,0 +1,16 @@
+version,target,model,mae,rmse,r2,is_best,train_rows,test_rows,n_features,train_cutoff
+V2,target_pts,CareerAvgBaseline,4.8794,6.9541,0.2289,False,2369,1060,66,2025-10-31
+V2,target_pts,LinearRegression,5.158,7.2432,0.1634,False,2369,1060,66,2025-10-31
+V2,target_pts,RandomForest,4.7296,6.618,0.3016,True,2369,1060,66,2025-10-31
+V2,target_reb,CareerAvgBaseline,2.5082,3.3839,0.172,False,2369,1060,66,2025-10-31
+V2,target_reb,LinearRegression,2.5438,3.3813,0.1733,False,2369,1060,66,2025-10-31
+V2,target_reb,RandomForest,2.3263,3.0399,0.3318,True,2369,1060,66,2025-10-31
+V2,target_ast,CareerAvgBaseline,1.2048,1.6743,0.1725,False,2369,1060,66,2025-10-31
+V2,target_ast,LinearRegression,1.241,1.7041,0.1428,False,2369,1060,66,2025-10-31
+V2,target_ast,RandomForest,1.1961,1.6322,0.2136,True,2369,1060,66,2025-10-31
+V2,target_stl,CareerAvgBaseline,0.8857,1.2049,0.0058,False,2369,1060,66,2025-10-31
+V2,target_stl,LinearRegression,0.9259,1.2254,-0.0282,False,2369,1060,66,2025-10-31
+V2,target_stl,RandomForest,0.8915,1.1639,0.0724,True,2369,1060,66,2025-10-31
+V2,target_blk,CareerAvgBaseline,0.3768,0.6383,0.1866,False,2369,1060,66,2025-10-31
+V2,target_blk,LinearRegression,0.4241,0.6576,0.1367,True,2369,1060,66,2025-10-31
+V2,target_blk,RandomForest,0.428,0.6329,0.2003,False,2369,1060,66,2025-10-31
