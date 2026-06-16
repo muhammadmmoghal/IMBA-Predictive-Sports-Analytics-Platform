@@ -1,0 +1,21 @@
+player_name,division,team,confidence_level,confidence_score,games_played_history,predicted_pts,predicted_reb,predicted_ast,predicted_stl,predicted_blk,pts_low,pts_high,reb_low,reb_high,ast_low,ast_high,stl_low,stl_high,blk_low,blk_high,prob_10_plus_pts,prob_15_plus_pts,prob_20_plus_pts,prob_5_plus_reb,prob_10_plus_reb,prob_5_plus_ast,prob_double_double
+Chimdi Maduka,D2 Comp 2026 Summer,The Dallas Storm,Medium,58,13,13.8,9.1,4.9,2.3,0.5,7.9,19.8,6.2,12.1,3.4,6.4,1.2,3.4,0.0,1.1,81.8,69.5,45.0,93.5,70.1,94.2,68.1
+Daveer Siddiqui,D2 Comp 2026 Summer,Net Rippers,Medium,59,3,22.3,6.9,4.5,2.1,0.5,16.4,28.2,4.0,9.9,3.0,6.0,0.9,3.2,0.0,1.1,88.7,86.3,85.1,88.3,30.1,79.8,45.3
+Tareq Fattul,D2 Comp 2026 Summer,Deloaders,High,90,26,16.9,13.3,4.3,1.6,1.3,12.2,21.7,9.0,17.6,1.6,7.0,0.7,2.5,0.0,2.6,86.1,77.1,66.4,95.1,90.4,83.6,94.1
+Amir Mostafa,D2 Comp 2026 Summer,ATX,Medium,54,3,8.9,4.6,3.9,1.9,0.1,2.9,14.8,1.6,7.5,2.4,5.4,0.8,3.1,0.0,0.6,55.0,20.8,36.4,61.5,14.1,92.8,16.1
+Maf N’diaye,D2 Comp 2026 Summer,Top Class,Medium,44,3,11.2,6.7,3.9,1.2,0.0,5.3,17.1,3.8,9.6,2.4,5.4,0.1,2.4,0.0,0.6,63.1,48.4,37.3,85.0,43.4,86.8,33.8
+Aadil Haq,D2 Comp 2026 Summer,Irving OGs,High,90,45,13.4,4.8,3.7,1.8,0.0,7.3,19.4,2.5,7.2,1.8,5.6,0.8,2.8,0.0,0.9,65.6,65.4,42.4,42.9,11.6,80.6,12.3
+Khalil Alsabag,D2 Comp 2026 Summer,Amel Foundation,High,90,31,15.6,4.9,3.5,1.7,0.0,8.6,22.7,2.5,7.2,2.0,5.0,0.5,2.9,0.0,0.4,74.6,67.4,51.4,50.8,17.8,93.0,22.4
+Muhammad Ali,D2 Comp 2026 Summer,The Rich,Medium,49,3,14.4,5.6,3.5,1.3,0.2,8.5,20.3,2.7,8.5,2.0,5.0,0.2,2.5,0.0,0.7,91.1,68.4,56.2,77.4,45.2,77.0,50.9
+Komi Koko,D2 Comp 2026 Summer,Free Sudan,Low,21,1,13.5,12.1,3.4,1.0,1.5,6.0,21.1,8.3,15.8,1.5,5.3,0.0,2.4,0.8,2.2,71.2,58.3,50.0,94.4,86.8,38.4,77.4
+Yahya Ali,D2 Comp 2026 Summer,The Rich,Medium,58,25,11.2,6.0,3.4,1.7,0.4,5.3,17.2,3.0,8.9,1.9,4.9,0.6,2.8,0.0,0.9,63.6,67.1,34.2,66.2,39.7,86.3,33.2
+Ali Mirhosseini,D2 Comp 2026 Summer,Deloaders,High,73,10,20.0,5.6,3.3,1.1,0.3,6.6,33.4,3.3,8.0,1.6,5.1,0.0,2.7,0.0,0.7,77.6,74.2,67.3,60.7,17.7,90.9,12.2
+Raziuddin Mohammad,D2 Comp 2026 Summer,Baitul Ballers,High,90,30,11.9,4.0,3.2,1.1,0.0,6.2,17.5,1.6,6.3,2.0,4.4,0.2,2.0,0.0,0.4,64.1,54.4,42.2,34.3,16.8,91.3,16.2
+Mohsin Asif,D2 Comp 2026 Summer,Lah Bros,Low,30,1,16.3,7.3,3.1,1.2,0.2,8.7,23.8,3.6,11.1,1.2,5.0,0.0,2.7,0.0,0.9,86.7,74.1,76.2,70.2,32.6,80.7,31.7
+Ibrahim MIr,D2 Rec 2026 Summer,Vela Victors,Medium,59,3,16.9,11.0,3.1,1.1,1.0,11.0,22.8,8.1,14.0,1.6,4.6,0.0,2.2,0.5,1.6,70.7,73.7,45.5,91.8,84.5,70.0,68.1
+Yunis Omar,D2 Rec 2026 Summer,Halal Hustlers,Medium,59,3,19.4,6.3,3.1,1.4,0.4,13.5,25.4,3.4,9.3,1.6,4.6,0.2,2.5,0.0,1.0,73.9,72.4,52.3,76.7,39.3,56.6,30.4
+Abdulla Osman,D2 Comp 2026 Summer,NSG,Medium,61,9,5.9,5.7,3.1,1.2,0.3,0.0,11.8,2.8,8.7,1.4,4.8,0.0,2.3,0.0,0.8,39.1,34.2,24.5,66.7,39.3,73.6,22.3
+Shah-Zaib Saleem,D2 Comp 2026 Summer,Net Rippers,Medium,44,3,9.4,4.9,3.1,1.7,0.3,3.4,15.3,1.9,7.8,1.6,4.6,0.6,2.8,0.0,0.8,58.2,36.7,23.7,51.2,23.0,59.6,29.1
+Beshr Alkhatib,D2 Comp 2026 Summer,Deloaders,High,80,25,12.8,5.6,2.9,1.4,0.1,4.4,21.3,3.3,8.0,1.7,4.1,0.4,2.3,0.0,0.5,69.7,61.6,40.9,56.3,36.5,96.8,39.2
+Magied Mohamedkhair,D2 Comp 2026 Summer,NSG,Medium,54,3,10.0,4.5,2.9,1.0,0.2,4.1,15.9,1.5,7.4,1.4,4.4,0.0,2.2,0.0,0.7,47.2,46.6,27.7,58.0,13.4,59.9,13.6
+Ishmael Elmi,D2 Rec 2026 Summer,Gauchos,Low,30,2,16.4,6.5,2.9,1.3,0.3,8.8,23.9,2.7,10.2,0.9,4.8,0.0,2.7,0.0,1.0,65.8,61.0,50.5,61.7,40.6,53.2,25.1
