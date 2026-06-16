@@ -1,0 +1,15 @@
+target,model,is_best,train_rows,test_rows,pos_train,pos_test,pos_rate_train,pos_rate_test,accuracy,precision,recall,f1,roc_auc,train_cutoff
+target_pts_10_plus,LogisticRegression,False,2369,1060,835,379,0.3525,0.3575,0.7425,0.6256,0.6966,0.6592,0.787,2025-10-31
+target_pts_10_plus,RandomForestClassifier,True,2369,1060,835,379,0.3525,0.3575,0.7349,0.6084,0.7256,0.6619,0.8029,2025-10-31
+target_pts_15_plus,LogisticRegression,False,2369,1060,431,190,0.1819,0.1792,0.7349,0.3747,0.7158,0.4919,0.7974,2025-10-31
+target_pts_15_plus,RandomForestClassifier,True,2369,1060,431,190,0.1819,0.1792,0.7623,0.4088,0.7316,0.5245,0.8246,2025-10-31
+target_pts_20_plus,LogisticRegression,False,2369,1060,215,99,0.0908,0.0934,0.7481,0.2391,0.7778,0.3658,0.7991,2025-10-31
+target_pts_20_plus,RandomForestClassifier,True,2369,1060,215,99,0.0908,0.0934,0.8179,0.274,0.5758,0.3713,0.8187,2025-10-31
+target_reb_5_plus,LogisticRegression,False,2369,1060,1003,472,0.4234,0.4453,0.6689,0.6318,0.6144,0.623,0.7257,2025-10-31
+target_reb_5_plus,RandomForestClassifier,True,2369,1060,1003,472,0.4234,0.4453,0.6877,0.646,0.661,0.6534,0.759,2025-10-31
+target_reb_10_plus,LogisticRegression,False,2369,1060,259,115,0.1093,0.1085,0.7679,0.249,0.5652,0.3457,0.7488,2025-10-31
+target_reb_10_plus,RandomForestClassifier,True,2369,1060,259,115,0.1093,0.1085,0.8491,0.3548,0.4783,0.4074,0.808,2025-10-31
+target_ast_5_plus,LogisticRegression,True,2369,1060,200,88,0.0844,0.083,0.6962,0.1599,0.625,0.2546,0.7175,2025-10-31
+target_ast_5_plus,RandomForestClassifier,False,2369,1060,200,88,0.0844,0.083,0.7849,0.1729,0.4205,0.245,0.7623,2025-10-31
+target_double_double,LogisticRegression,False,2369,1060,173,72,0.073,0.0679,0.8208,0.157,0.375,0.2213,0.7461,2025-10-31
+target_double_double,RandomForestClassifier,True,2369,1060,173,72,0.073,0.0679,0.8925,0.2857,0.3889,0.3294,0.8215,2025-10-31

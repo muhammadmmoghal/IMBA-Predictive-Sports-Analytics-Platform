@@ -1,7 +1,19 @@
 """
-train_model.py  (V2 — tier-aware + STL/BLK)
-Trains models for pts / reb / ast / stl / blk and saves the best model
-per target to models/.
+train_model.py  (V3 — tier-aware + STL/BLK + probability models)
+Trains regression models for pts / reb / ast / stl / blk AND
+classification models for seven probability thresholds.
+
+What changed from V2:
+  - Seven binary classification targets added:
+      target_pts_10_plus, target_pts_15_plus, target_pts_20_plus
+      target_reb_5_plus,  target_reb_10_plus
+      target_ast_5_plus,  target_double_double
+  - Two classifiers trained per target:
+      LogisticRegression (balanced class weights)
+      RandomForestClassifier (balanced class weights, 200 trees)
+  - Evaluated with accuracy, precision, recall, F1, ROC-AUC.
+  - Best classifier saved to models/{target_name}_model.pkl.
+  - Results saved to reports/probability_model_results.csv.
 
 What changed from V1:
   - Feature set expanded from 24 (V1) to 66 (V2) by adding tier-aware
@@ -17,14 +29,6 @@ Time split:
   Train <= 2025-10-31  (D1/D2 2024 and 2025 Summer seasons)
   Test  >  2025-10-31  (D1/D2 2025-26 Winter — the current season)
 
-Models per target:
-  1. CareerAvgBaseline  — always predict career_{stat}_avg
-  2. LinearRegression   — Pipeline(StandardScaler → LinearRegression)
-  3. RandomForest       — 200 trees, min_samples_leaf=5
-
-Best model saved to models/{stat}_model.pkl.
-Results saved to reports/model_results.csv.
-
 Usage:  python src/train_model.py
 """
 
@@ -36,20 +40,24 @@ import numpy as np
 import pandas as pd
 import joblib
 
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import (
+    mean_absolute_error, mean_squared_error, r2_score,
+    accuracy_score, precision_score, recall_score, f1_score, roc_auc_score,
+)
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
 
-FEATURES_PATH = Path("data/processed/features.csv")
-MODELS_DIR    = Path("models")
-REPORTS_DIR   = Path("reports")
-RESULTS_PATH  = REPORTS_DIR / "model_results.csv"
+FEATURES_PATH      = Path("data/processed/features.csv")
+MODELS_DIR         = Path("models")
+REPORTS_DIR        = Path("reports")
+RESULTS_PATH       = REPORTS_DIR / "model_results.csv"
+PROB_RESULTS_PATH  = REPORTS_DIR / "probability_model_results.csv"
 
 TRAIN_CUTOFF = pd.Timestamp("2025-10-31")
 
@@ -127,6 +135,27 @@ RF_PARAMS = dict(
     n_estimators=200,
     max_depth=None,
     min_samples_leaf=5,
+    random_state=42,
+    n_jobs=-1,
+)
+
+# Probability threshold targets.
+# Each entry: (regression_target_column, threshold) or None for double-double.
+# double_double = 1 if player scores 10+ in at least 2 of {pts, reb, ast, stl, blk}.
+PROB_TARGETS: dict[str, tuple[str, int] | None] = {
+    "pts_10_plus":   ("target_pts", 10),
+    "pts_15_plus":   ("target_pts", 15),
+    "pts_20_plus":   ("target_pts", 20),
+    "reb_5_plus":    ("target_reb",  5),
+    "reb_10_plus":   ("target_reb", 10),
+    "ast_5_plus":    ("target_ast",  5),
+    "double_double": None,
+}
+
+RFC_PARAMS = dict(
+    n_estimators=200,
+    min_samples_leaf=5,
+    class_weight="balanced",
     random_state=42,
     n_jobs=-1,
 )
@@ -210,6 +239,157 @@ def train_target(
     best_model.version      = version
 
     return results, best_model, best_name
+
+
+# ---------------------------------------------------------------------------
+# Classification helpers
+# ---------------------------------------------------------------------------
+
+def clf_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray) -> dict:
+    auc = None
+    if len(np.unique(y_true)) == 2:
+        try:
+            auc = round(float(roc_auc_score(y_true, y_prob)), 4)
+        except Exception:
+            pass
+    return {
+        "accuracy":  round(float(accuracy_score(y_true, y_pred)),            4),
+        "precision": round(float(precision_score(y_true, y_pred, zero_division=0)), 4),
+        "recall":    round(float(recall_score(y_true, y_pred, zero_division=0)),    4),
+        "f1":        round(float(f1_score(y_true, y_pred, zero_division=0)),        4),
+        "roc_auc":   auc,
+    }
+
+
+def train_prob_target(
+    name: str,
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+) -> tuple[dict, object, str]:
+    """
+    Train LogisticRegression and RandomForestClassifier for one binary target.
+    Returns (results_dict, best_model, best_model_name).
+    Best is chosen by F1 score (handles class imbalance better than accuracy).
+    """
+    results: dict = {}
+
+    # ── Logistic Regression ───────────────────────────────────────────────
+    lr = Pipeline([
+        ("scaler", StandardScaler()),
+        ("model", LogisticRegression(
+            class_weight="balanced", max_iter=1000, random_state=42
+        )),
+    ])
+    lr.fit(X_train[V2_FEATURE_COLS], y_train)
+    y_pred_lr = lr.predict(X_test[V2_FEATURE_COLS])
+    y_prob_lr = lr.predict_proba(X_test[V2_FEATURE_COLS])[:, 1]
+    results["LogisticRegression"] = clf_metrics(y_test.values, y_pred_lr, y_prob_lr)
+    log.info("    LogisticRegression  acc=%.3f  prec=%.3f  rec=%.3f  f1=%.3f",
+             results["LogisticRegression"]["accuracy"],
+             results["LogisticRegression"]["precision"],
+             results["LogisticRegression"]["recall"],
+             results["LogisticRegression"]["f1"])
+
+    # ── Random Forest Classifier ──────────────────────────────────────────
+    rfc = RandomForestClassifier(**RFC_PARAMS)
+    rfc.fit(X_train[V2_FEATURE_COLS], y_train)
+    y_pred_rfc = rfc.predict(X_test[V2_FEATURE_COLS])
+    y_prob_rfc = rfc.predict_proba(X_test[V2_FEATURE_COLS])[:, 1]
+    results["RandomForestClassifier"] = clf_metrics(y_test.values, y_pred_rfc, y_prob_rfc)
+    log.info("    RandomForestClassifier  acc=%.3f  prec=%.3f  rec=%.3f  f1=%.3f",
+             results["RandomForestClassifier"]["accuracy"],
+             results["RandomForestClassifier"]["precision"],
+             results["RandomForestClassifier"]["recall"],
+             results["RandomForestClassifier"]["f1"])
+
+    # Pick best by F1
+    best_name  = max(results, key=lambda m: results[m]["f1"])
+    best_model = lr if best_name == "LogisticRegression" else rfc
+    log.info("    Best: %s (F1=%.3f)", best_name, results[best_name]["f1"])
+
+    best_model.target       = name
+    best_model.model_name   = best_name
+    best_model.feature_cols = V2_FEATURE_COLS
+    best_model.test_metrics = results[best_name]
+
+    return results, best_model, best_name
+
+
+def train_probability_models(
+    df_model: pd.DataFrame,
+    train_mask: pd.Series,
+    test_mask: pd.Series,
+) -> tuple[dict, dict, list]:
+    """
+    Build binary targets, train classifiers, save models, return results.
+    Returns (all_results, best_names, rows_for_csv).
+    """
+    # ── Build binary classification targets ───────────────────────────────
+    for name, spec in PROB_TARGETS.items():
+        if spec is None:
+            # double_double: 10+ in at least 2 of the 5 stats
+            reaches_10 = (
+                (df_model["target_pts"] >= 10).astype(int)
+                + (df_model["target_reb"] >= 10).astype(int)
+                + (df_model["target_ast"] >= 10).astype(int)
+                + (df_model["target_stl"] >= 10).astype(int)
+                + (df_model["target_blk"] >= 10).astype(int)
+            )
+            df_model[f"target_{name}"] = (reaches_10 >= 2).astype(int)
+        else:
+            src_col, threshold = spec
+            df_model[f"target_{name}"] = (df_model[src_col] >= threshold).astype(int)
+
+    X_train = df_model[train_mask]
+    X_test  = df_model[test_mask]
+
+    all_results: dict = {}
+    best_names:  dict = {}
+    rows:        list = []
+
+    for name in PROB_TARGETS:
+        target_col = f"target_{name}"
+        y_train = X_train[target_col]
+        y_test  = X_test[target_col]
+
+        pos_train = int(y_train.sum())
+        pos_test  = int(y_test.sum())
+        log.info("  prob  %s:  train pos=%d/%d (%.1f%%)  test pos=%d/%d (%.1f%%)",
+                 name, pos_train, len(y_train), 100*pos_train/len(y_train),
+                 pos_test, len(y_test), 100*pos_test/len(y_test))
+
+        results, best_model, best_name = train_prob_target(
+            name, X_train, y_train, X_test, y_test
+        )
+        all_results[name] = results
+        best_names[name]  = best_name
+
+        model_path = MODELS_DIR / f"{name}_model.pkl"
+        joblib.dump(best_model, model_path)
+        log.info("  Saved %s -> %s", best_name, model_path)
+
+        for model_name, m in results.items():
+            rows.append({
+                "target":      target_col,
+                "model":       model_name,
+                "is_best":     model_name == best_name,
+                "train_rows":  int(train_mask.sum()),
+                "test_rows":   int(test_mask.sum()),
+                "pos_train":   int(y_train.sum()),
+                "pos_test":    int(y_test.sum()),
+                "pos_rate_train": round(float(y_train.mean()), 4),
+                "pos_rate_test":  round(float(y_test.mean()),  4),
+                "accuracy":    m["accuracy"],
+                "precision":   m["precision"],
+                "recall":      m["recall"],
+                "f1":          m["f1"],
+                "roc_auc":     m["roc_auc"],
+                "train_cutoff": str(TRAIN_CUTOFF.date()),
+            })
+
+    return all_results, best_names, rows
 
 
 # ---------------------------------------------------------------------------
@@ -312,6 +492,91 @@ def print_audit(
     print(sep)
 
 
+def print_probability_audit(
+    df_model: pd.DataFrame,
+    train_mask: pd.Series,
+    test_mask: pd.Series,
+    all_results: dict,
+    best_names: dict,
+) -> None:
+    sep = "=" * 72
+
+    print()
+    print(sep)
+    print("PROBABILITY MODEL AUDIT REPORT  (V3 — classification targets)")
+    print(sep)
+
+    print(f"\n  Train rows : {train_mask.sum()}   Test rows : {test_mask.sum()}")
+
+    # ── Class imbalance table ─────────────────────────────────────────────
+    print(f"\n{'-'*72}")
+    print("  CLASSIFICATION TARGET COUNTS & IMBALANCE")
+    print(f"{'-'*72}")
+    print(f"  {'Target':<22}  {'Train Pos':>10}  {'Train %':>8}  "
+          f"{'Test Pos':>9}  {'Test %':>7}  {'Imbalance?':>12}")
+    print("  " + "-" * 70)
+
+    X_train = df_model[train_mask]
+    X_test  = df_model[test_mask]
+
+    for name in PROB_TARGETS:
+        col = f"target_{name}"
+        tr_pos  = int(X_train[col].sum())
+        tr_rate = X_train[col].mean()
+        te_pos  = int(X_test[col].sum())
+        te_rate = X_test[col].mean()
+        flag    = "SEVERE" if tr_rate < 0.05 or tr_rate > 0.95 else (
+                  "Moderate" if tr_rate < 0.15 or tr_rate > 0.85 else "OK")
+        print(f"  {col:<22}  {tr_pos:>10}  {100*tr_rate:>7.1f}%  "
+              f"{te_pos:>9}  {100*te_rate:>6.1f}%  {flag:>12}")
+
+    # ── Model performance ─────────────────────────────────────────────────
+    print(f"\n{'-'*72}")
+    print("  MODEL PERFORMANCE (test set)")
+    print(f"{'-'*72}")
+    for name, results in all_results.items():
+        best = best_names[name]
+        print(f"\n  target_{name}")
+        print(f"  {'Model':<26}  {'Acc':>6}  {'Prec':>6}  {'Rec':>6}  "
+              f"{'F1':>6}  {'AUC':>6}")
+        print("  " + "-" * 62)
+        for model_name, m in results.items():
+            marker = " <--" if model_name == best else "     "
+            auc_str = f"{m['roc_auc']:.4f}" if m["roc_auc"] is not None else "  N/A "
+            print(f"  {model_name:<26}  {m['accuracy']:>6.4f}  {m['precision']:>6.4f}  "
+                  f"{m['recall']:>6.4f}  {m['f1']:>6.4f}  {auc_str}{marker}")
+
+    # ── Summary: best model per target ───────────────────────────────────
+    print(f"\n{'-'*72}")
+    print("  SUMMARY: Best classifier per target")
+    print(f"{'-'*72}")
+    print(f"  {'Target':<22}  {'Best Model':<26}  {'F1':>6}  {'AUC':>6}  {'Saved as'}")
+    print("  " + "-" * 72)
+    for name in PROB_TARGETS:
+        best = best_names[name]
+        m    = all_results[name][best]
+        auc_str = f"{m['roc_auc']:.4f}" if m["roc_auc"] is not None else "  N/A"
+        print(f"  {'target_'+name:<22}  {best:<26}  {m['f1']:>6.4f}  "
+              f"{auc_str}  models/{name}_model.pkl")
+
+    # ── Sample predictions on test rows ──────────────────────────────────
+    print(f"\n{'-'*72}")
+    print("  SAMPLE TEST-ROW PREDICTIONS (first 5 test rows)")
+    print(f"{'-'*72}")
+    sample = df_model[test_mask].head(5)
+    for _, row in sample.iterrows():
+        pname = row.get("player_name", "?")
+        tier  = row.get("tier", "?")
+        print(f"\n  {pname} | tier={tier}")
+        actual_line = []
+        for name in PROB_TARGETS:
+            actual_line.append(f"target_{name}={int(row[f'target_{name}'])}")
+        print("    Actual: " + "  ".join(actual_line))
+
+    print(f"\n  Results saved to: {PROB_RESULTS_PATH}")
+    print(sep)
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -395,13 +660,25 @@ def main() -> None:
                 "train_cutoff": str(TRAIN_CUTOFF.date()),
             })
 
-    # ── Save results CSV ─────────────────────────────────────────────────
+    # ── Save regression results CSV ───────────────────────────────────────
     results_df = pd.DataFrame(results_rows)
     results_df.to_csv(RESULTS_PATH, index=False)
     log.info("Results saved to %s", RESULTS_PATH)
 
-    # ── Audit report ─────────────────────────────────────────────────────
+    # ── Regression audit report ───────────────────────────────────────────
     print_audit(df_model, train_mask, test_mask, {}, v2_results, v2_best_names)
+
+    # ── Probability models (V3) ───────────────────────────────────────────
+    log.info("Training V3 probability classification models...")
+    prob_results, prob_best_names, prob_rows = train_probability_models(
+        df_model, train_mask, test_mask
+    )
+
+    prob_df = pd.DataFrame(prob_rows)
+    prob_df.to_csv(PROB_RESULTS_PATH, index=False)
+    log.info("Probability results saved to %s", PROB_RESULTS_PATH)
+
+    print_probability_audit(df_model, train_mask, test_mask, prob_results, prob_best_names)
 
 
 if __name__ == "__main__":

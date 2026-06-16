@@ -1,6 +1,16 @@
 """
-predict.py  (V2 — tier-aware predictions + STL/BLK)
-Generates next-game predictions using the V2 models.
+predict.py  (V3 — tier-aware predictions + STL/BLK + probability models)
+Generates next-game predictions using the V2 regression models and
+V3 probability classification models.
+
+Changes from V2:
+  - Probability outputs added for seven thresholds:
+      10+ PTS, 15+ PTS, 20+ PTS
+       5+ REB, 10+ REB
+       5+ AST
+      Double-Double
+  - Probability models loaded from models/{target_name}_model.pkl.
+  - If probability models are not yet trained, stat predictions still work.
 
 Changes from V1:
   - New --tier {tier1, tier2} flag: predict for a specific division context.
@@ -11,23 +21,6 @@ Changes from V1:
   - Confidence is based on the number of games in the requested tier
     (overall career games when no tier is specified).
   - Output shows recent team in the requested tier.
-
-When --both is used, predictions differ because:
-  - tier_d1 = 1 for Tier 1 prediction, 0 for Tier 2.
-  - The V2 models were trained to distinguish these contexts using
-    tier-specific historical averages as features.
-
-Feature construction for next game:
-  All of the player's played games are treated as prior history.
-  The same 66 V2 features from train_model.py are computed here
-  with identical logic, so there is no train/predict mismatch.
-  Tier-specific features that are NaN (no prior games in that tier)
-  are filled with 0, matching the training-time fill strategy.
-
-Confidence labels (based on games in the requested tier):
-  0-2 games  ->  Low
-  3-7 games  ->  Medium
-  8+ games   ->  High
 
 Usage:
   python src/predict.py                            # 5 sample players, default tier
@@ -60,6 +53,27 @@ MODEL_FILES = {
     "ast": MODELS_DIR / "ast_model.pkl",
     "stl": MODELS_DIR / "stl_model.pkl",
     "blk": MODELS_DIR / "blk_model.pkl",
+}
+
+PROB_MODEL_FILES = {
+    "pts_10_plus":   MODELS_DIR / "pts_10_plus_model.pkl",
+    "pts_15_plus":   MODELS_DIR / "pts_15_plus_model.pkl",
+    "pts_20_plus":   MODELS_DIR / "pts_20_plus_model.pkl",
+    "reb_5_plus":    MODELS_DIR / "reb_5_plus_model.pkl",
+    "reb_10_plus":   MODELS_DIR / "reb_10_plus_model.pkl",
+    "ast_5_plus":    MODELS_DIR / "ast_5_plus_model.pkl",
+    "double_double": MODELS_DIR / "double_double_model.pkl",
+}
+
+# Display labels for each probability target
+PROB_LABELS = {
+    "pts_10_plus":   "10+ PTS",
+    "pts_15_plus":   "15+ PTS",
+    "pts_20_plus":   "20+ PTS",
+    "reb_5_plus":    " 5+ REB",
+    "reb_10_plus":   "10+ REB",
+    "ast_5_plus":    " 5+ AST",
+    "double_double": "Double-Double",
 }
 
 STATS = ["pts", "reb", "ast", "stl", "blk"]
@@ -234,9 +248,11 @@ def predict_player_tier(
     player_df: pd.DataFrame,
     models: dict,
     tier_label: str,          # "tier1" or "tier2"
+    prob_models: dict | None = None,
 ) -> dict:
     """
-    Build V2 features and run all five models for one player in one tier context.
+    Build V2 features and run all five regression models plus optional
+    probability classifiers for one player in one tier context.
     Returns a result dict.
     """
     tier_val  = TIER_MAP[tier_label]   # "D1" or "D2"
@@ -248,6 +264,15 @@ def predict_player_tier(
 
     preds = {stat: max(0.0, float(models[stat].predict(X)[0]))
              for stat in ["pts", "reb", "ast", "stl", "blk"]}
+
+    # Probability predictions
+    probs: dict = {}
+    if prob_models:
+        for name, model in prob_models.items():
+            try:
+                probs[name] = float(model.predict_proba(X)[0, 1])
+            except Exception:
+                probs[name] = None
 
     df_sorted = player_df.sort_values(["date", "game_id"])
     last       = df_sorted.iloc[-1]
@@ -268,7 +293,7 @@ def predict_player_tier(
         "games_total":        int(feat["games_played_before"]),
         "confidence":         confidence_label(games_in_tier),
         "last_game":          str(last["date"])[:10],
-        # Predictions
+        # Regression predictions
         "pred_pts":  round(preds["pts"],  1),
         "pred_reb":  round(preds["reb"],  1),
         "pred_ast":  round(preds["ast"],  1),
@@ -283,6 +308,8 @@ def predict_player_tier(
         "tier_last3_pts":  round(feat[f"last_3_{tier_label}_pts_avg"], 1),
         "tier_last3_reb":  round(feat[f"last_3_{tier_label}_reb_avg"], 1),
         "tier_last3_ast":  round(feat[f"last_3_{tier_label}_ast_avg"], 1),
+        # Probability predictions (may be empty if models not trained yet)
+        "probs": probs,
     }
 
 
@@ -291,6 +318,31 @@ def predict_player_tier(
 # ---------------------------------------------------------------------------
 
 CONFIDENCE_BADGE = {"High": "[HIGH]", "Medium": "[MED] ", "Low": "[LOW] "}
+
+
+def _fmt_prob(p: float | None) -> str:
+    if p is None:
+        return " N/A"
+    return f"{round(p * 100):>3}%"
+
+
+def _print_probabilities(probs: dict) -> None:
+    if not probs:
+        return
+    print(f"\n  {'Probabilities':}")
+    # Row 1: PTS thresholds
+    p10  = _fmt_prob(probs.get("pts_10_plus"))
+    p15  = _fmt_prob(probs.get("pts_15_plus"))
+    p20  = _fmt_prob(probs.get("pts_20_plus"))
+    print(f"    10+ PTS: {p10}    15+ PTS: {p15}    20+ PTS: {p20}")
+    # Row 2: REB + AST thresholds
+    r5   = _fmt_prob(probs.get("reb_5_plus"))
+    r10  = _fmt_prob(probs.get("reb_10_plus"))
+    a5   = _fmt_prob(probs.get("ast_5_plus"))
+    print(f"     5+ REB: {r5}    10+ REB: {r10}     5+ AST: {a5}")
+    # Row 3: Double-double
+    dd   = _fmt_prob(probs.get("double_double"))
+    print(f"    Double-Double: {dd}")
 
 
 def print_prediction(r: dict, idx: int | None = None) -> None:
@@ -312,6 +364,7 @@ def print_prediction(r: dict, idx: int | None = None) -> None:
           f"{r['tier_career_stl']:>6.1f}  {r['tier_career_blk']:>6.1f}")
     print(f"  {'Tier last-3 avg (PTS/REB/AST)':32}  "
           f"{r['tier_last3_pts']:>6.1f}  {r['tier_last3_reb']:>6.1f}  {r['tier_last3_ast']:>6.1f}")
+    _print_probabilities(r.get("probs", {}))
 
 
 def print_both(r1: dict, r2: dict, idx: int | None = None) -> None:
@@ -341,10 +394,30 @@ def print_both(r1: dict, r2: dict, idx: int | None = None) -> None:
         print(f"  {col:<8}  {r1[k]:>10.1f}  {r1[c1]:>12.1f}  "
               f"  {r2[k]:>10.1f}  {r2[c2]:>12.1f}")
 
+    # Probabilities for both tiers side-by-side
+    p1 = r1.get("probs", {})
+    p2 = r2.get("probs", {})
+    if p1 or p2:
+        prob_order = [
+            ("pts_10_plus", "10+ PTS"),
+            ("pts_15_plus", "15+ PTS"),
+            ("pts_20_plus", "20+ PTS"),
+            ("reb_5_plus",  " 5+ REB"),
+            ("reb_10_plus", "10+ REB"),
+            ("ast_5_plus",  " 5+ AST"),
+            ("double_double", "Dbl-Dbl"),
+        ]
+        print(f"\n  {'Probability':20}  {'Tier 1':>8}  {'Tier 2':>8}")
+        print("  " + "-" * 38)
+        for key, label in prob_order:
+            v1 = _fmt_prob(p1.get(key))
+            v2 = _fmt_prob(p2.get(key))
+            print(f"  {label:<20}  {v1:>8}  {v2:>8}")
+
 
 def print_banner() -> None:
     print("=" * 64)
-    print("  IMBA PLAYER PERFORMANCE PREDICTOR  (V2 — tier-aware)")
+    print("  IMBA PLAYER PERFORMANCE PREDICTOR  (V3 — probability models)")
     print("=" * 64)
 
 
@@ -352,7 +425,7 @@ def print_banner() -> None:
 # Data + model loading
 # ---------------------------------------------------------------------------
 
-def load_data_and_models() -> tuple[pd.DataFrame, dict]:
+def load_data_and_models() -> tuple[pd.DataFrame, dict, dict]:
     if not CLEAN_PATH.exists():
         print(f"ERROR: {CLEAN_PATH} not found. Run clean_data.py first.")
         sys.exit(1)
@@ -366,7 +439,20 @@ def load_data_and_models() -> tuple[pd.DataFrame, dict]:
             sys.exit(1)
         models[stat] = joblib.load(path)
 
-    return df, models
+    prob_models = {}
+    missing_prob = []
+    for name, path in PROB_MODEL_FILES.items():
+        if path.exists():
+            prob_models[name] = joblib.load(path)
+        else:
+            missing_prob.append(str(path))
+
+    if missing_prob:
+        print(f"  NOTE: {len(missing_prob)} probability model(s) not found "
+              f"— run train_model.py to enable probability outputs.")
+        prob_models = {}
+
+    return df, models, prob_models
 
 
 # ---------------------------------------------------------------------------
@@ -391,7 +477,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    df, models = load_data_and_models()
+    df, models, prob_models = load_data_and_models()
     print_banner()
 
     # ── Single-player mode ────────────────────────────────────────────────
@@ -412,7 +498,9 @@ def main() -> None:
                 if tval not in player_tiers:
                     print(f"\n  NOTE: {player_df['player_name'].iloc[0]} has no {tval} history "
                           f"— {tlabel} prediction uses overall averages as fallback.")
-                results[tlabel] = predict_player_tier(player_df, models, tlabel)
+                results[tlabel] = predict_player_tier(
+                    player_df, models, tlabel, prob_models or None
+                )
             print_both(results["tier1"], results["tier2"])
 
         elif args.tier:
@@ -420,14 +508,14 @@ def main() -> None:
             if tval not in player_tiers:
                 print(f"\n  NOTE: {player_df['player_name'].iloc[0]} has no {tval} history "
                       f"— prediction uses overall averages as fallback.")
-            r = predict_player_tier(player_df, models, args.tier)
+            r = predict_player_tier(player_df, models, args.tier, prob_models or None)
             print_prediction(r)
 
         else:
             # Default: use most recent tier; hint about --both if multi-tier
             last_tier_val = player_df.sort_values("date").iloc[-1]["tier"]
             default_label = {v: k for k, v in TIER_MAP.items()}[last_tier_val]
-            r = predict_player_tier(player_df, models, default_label)
+            r = predict_player_tier(player_df, models, default_label, prob_models or None)
             print_prediction(r)
             if len(player_tiers) > 1:
                 pname = player_df["player_name"].iloc[0]
@@ -453,7 +541,7 @@ def main() -> None:
         last_tier_val = player_df.sort_values("date").iloc[-1]["tier"]
         tlabel     = {v: k for k, v in TIER_MAP.items()}[last_tier_val]
         try:
-            r = predict_player_tier(player_df, models, tlabel)
+            r = predict_player_tier(player_df, models, tlabel, prob_models or None)
             results.append(r)
         except Exception as e:
             print(f"  Warning: {pname}: {e}")
