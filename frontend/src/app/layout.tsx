@@ -18,8 +18,16 @@ const saira = Saira({
 });
 
 export const metadata: Metadata = {
-  title: 'IMBA Predictive Sports Analytics',
+  title: 'IMBA Predictive Analytics',
   description: '2026 Season predictions and player projections for IMBA basketball.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icon.png', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
