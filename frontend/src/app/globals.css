@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --imba-blue: 59 130 246;
+    --imba-sky: 14 165 233;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #03060D;
+    color: #f1f5f9;
+    font-feature-settings: 'kern' 1, 'liga' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: #050C1A; }
+  ::-webkit-scrollbar-thumb { background: #0E2040; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.5); }
+}
+
+@layer components {
+  .card {
+    background-color: #091426;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 0.75rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  }
+
+  .card:hover {
+    border-color: rgba(59, 130, 246, 0.35);
+    background-color: #0C1A33;
+  }
+
+  /* D2 Comp accent */
+  .card-green {
+    background-color: #091426;
+    border: 1px solid rgba(59, 130, 246, 0.22);
+    border-radius: 0.75rem;
+    box-shadow: 0 0 28px rgba(59, 130, 246, 0.06), inset 0 0 28px rgba(59, 130, 246, 0.02);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card-green:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.12), inset 0 0 28px rgba(59, 130, 246, 0.04);
+  }
+
+  /* D2 Rec accent */
+  .card-gold {
+    background-color: #091426;
+    border: 1px solid rgba(14, 165, 233, 0.22);
+    border-radius: 0.75rem;
+    box-shadow: 0 0 28px rgba(14, 165, 233, 0.06), inset 0 0 28px rgba(14, 165, 233, 0.02);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card-gold:hover {
+    border-color: rgba(14, 165, 233, 0.4);
+    box-shadow: 0 0 40px rgba(14, 165, 233, 0.12), inset 0 0 28px rgba(14, 165, 233, 0.04);
+  }
+}
+
+@layer utilities {
+  .text-gradient-green {
+    background: linear-gradient(135deg, #93C5FD 0%, #3B82F6 60%, #2563EB 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #7DD3FC 0%, #0EA5E9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-brand {
+    background: linear-gradient(135deg, #93C5FD 0%, #3B82F6 50%, #1D4ED8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, #06101F 25%, #0C1E38 50%, #06101F 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.8s infinite linear;
+  }
+
+  .animate-fade-up {
+    animation: fadeUp 0.45s ease-out both;
+  }
+}

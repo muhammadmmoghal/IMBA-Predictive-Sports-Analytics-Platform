@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Badge ring -->
+  <circle cx="50" cy="50" r="47" fill="#070c18" stroke="#1D4ED8" stroke-width="1" opacity="0.8"/>
+  <!-- 5-pointed star (outer radius 40, inner radius 17, center 50,50) -->
+  <path d="M50 10 L60 36 L88 38 L67 55 L74 82 L50 67 L26 82 L33 55 L12 38 L40 36 Z"
+        fill="#0d1e40" stroke="#3B82F6" stroke-width="2" stroke-linejoin="round"/>
+  <!-- IMBA label -->
+  <text x="50" y="56" text-anchor="middle"
+        font-family="Arial Black, Impact, sans-serif"
+        font-weight="900" font-size="13" fill="white" letter-spacing="2">IMBA</text>
+</svg>
