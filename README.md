@@ -23,13 +23,13 @@ The pipeline spans the full data science lifecycle: web scraping → cleaning �
 
 ## Features
 
-- **📊 Performance Dashboard** — League-wide KPI cards, top projected scorers, and featured player projections all in one view
-- **🏀 Player Predictions** — Per-player stat projections (PTS, REB, AST, STL, BLK) with confidence scoring and prediction ranges
-- **🏆 Leaderboards** — Sortable, filterable rankings across every statistical category
-- **📐 Division Analytics** — Side-by-side D2 Comp and D2 Rec breakdown with division-level insights
-- **🔍 Player Search** — Instant fuzzy search with per-player division toggles and full stat cards
-- **🎯 Probability Models** — Threshold predictions for 10+, 15+, and 20+ point games, double-double likelihood, and more
-- **⚡ Responsive UI** — Mobile-first design with a dark sports-analytics aesthetic
+- ** Performance Dashboard** — League-wide KPI cards, top projected scorers, and featured player projections all in one view
+- ** Player Predictions** — Per-player stat projections (PTS, REB, AST, STL, BLK) with confidence scoring and prediction ranges
+- ** Leaderboards** — Sortable, filterable rankings across every statistical category
+- ** Division Analytics** — Side-by-side D2 Comp and D2 Rec breakdown with division-level insights
+- ** Player Search** — Instant fuzzy search with per-player division toggles and full stat cards
+- ** Probability Models** — Threshold predictions for 10+, 15+, and 20+ point games, double-double likelihood, and more
+- ** Responsive UI** — Mobile-first design with a dark sports-analytics aesthetic
 
 ---
 
@@ -232,4 +232,4 @@ The University of Texas at Dallas
 
 ---
 
-<p align="center">Built with data, code, and basketball 🏀</p>
+<p align="center">Built with data, code, and basketball </p>
